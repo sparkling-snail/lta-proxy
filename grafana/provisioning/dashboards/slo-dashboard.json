@@ -1,0 +1,268 @@
+{
+  "title": "LTA Bus Proxy — SLO Dashboard",
+  "uid": "lta-proxy-slo",
+  "schemaVersion": 38,
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+
+    {
+      "type": "stat",
+      "title": "Availability (5m)",
+      "id": 1,
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.99 },
+              { "color": "green", "value": 0.995 }
+            ]
+          },
+          "mappings": []
+        }
+      },
+      "targets": [{
+        "expr": "rate(lta_proxy_requests_total{status=\"200\"}[5m]) / rate(lta_proxy_requests_total[5m])",
+        "legendFormat": "Availability"
+      }]
+    },
+
+    {
+      "type": "stat",
+      "title": "P95 Latency (5m)",
+      "id": 2,
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.25 },
+              { "color": "red", "value": 0.5 }
+            ]
+          }
+        }
+      },
+      "targets": [{
+        "expr": "histogram_quantile(0.95, rate(lta_proxy_request_duration_seconds_bucket{endpoint=\"arrivals\"}[5m]))",
+        "legendFormat": "P95 latency"
+      }]
+    },
+
+    {
+      "type": "stat",
+      "title": "Error Budget Remaining (30d)",
+      "id": 3,
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.25 },
+              { "color": "green", "value": 0.5 }
+            ]
+          }
+        }
+      },
+      "targets": [{
+        "expr": "1 - ((1 - (rate(lta_proxy_requests_total{status=\"200\"}[30d]) / rate(lta_proxy_requests_total[30d]))) / 0.005)",
+        "legendFormat": "Budget remaining"
+      }]
+    },
+
+    {
+      "type": "stat",
+      "title": "Cache Hit Rate (5m)",
+      "id": 4,
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "green", "value": 0.7 }
+            ]
+          }
+        }
+      },
+      "targets": [{
+        "expr": "rate(lta_cache_hits_total[5m]) / (rate(lta_cache_hits_total[5m]) + rate(lta_cache_misses_total[5m]))",
+        "legendFormat": "Cache hit rate"
+      }]
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Request Rate & Error Rate",
+      "id": 5,
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": { "unit": "reqps" },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Error rate" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } },
+              { "id": "custom.axisPlacement", "value": "right" },
+              { "id": "unit", "value": "percentunit" }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "rate(lta_proxy_requests_total[1m])",
+          "legendFormat": "{{status}}"
+        },
+        {
+          "expr": "1 - rate(lta_proxy_requests_total{status=\"200\"}[5m]) / rate(lta_proxy_requests_total[5m])",
+          "legendFormat": "Error rate"
+        }
+      ]
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Latency Percentiles",
+      "id": 6,
+      "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(lta_proxy_request_duration_seconds_bucket{endpoint=\"arrivals\"}[5m]))",
+          "legendFormat": "P50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(lta_proxy_request_duration_seconds_bucket{endpoint=\"arrivals\"}[5m]))",
+          "legendFormat": "P95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(lta_proxy_request_duration_seconds_bucket{endpoint=\"arrivals\"}[5m]))",
+          "legendFormat": "P99"
+        }
+      ]
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Error Budget Burn Rate (1h window)",
+      "id": 7,
+      "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "expr": "(1 - rate(lta_proxy_requests_total{status=\"200\"}[1h]) / rate(lta_proxy_requests_total[1h])) / 0.005",
+          "legendFormat": "Burn rate (1h)"
+        },
+        {
+          "expr": "(1 - rate(lta_proxy_requests_total{status=\"200\"}[6h]) / rate(lta_proxy_requests_total[6h])) / 0.005",
+          "legendFormat": "Burn rate (6h)"
+        }
+      ],
+      "thresholds": [
+        { "value": 14, "op": "gt", "color": "red", "fill": true, "line": true },
+        { "value": 3, "op": "gt", "color": "yellow", "fill": true, "line": true }
+      ]
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Cache Age & Stale Serves",
+      "id": 8,
+      "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": { "unit": "s" },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Stale serves/min" },
+            "properties": [
+              { "id": "unit", "value": "short" },
+              { "id": "custom.axisPlacement", "value": "right" },
+              { "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "lta_bus_arrival_cache_age_seconds",
+          "legendFormat": "Cache age — {{bus_stop_code}}"
+        },
+        {
+          "expr": "rate(lta_cache_stale_serves_total[1m]) * 60",
+          "legendFormat": "Stale serves/min"
+        }
+      ]
+    },
+
+    {
+      "type": "timeseries",
+      "title": "LTA Upstream Errors",
+      "id": 9,
+      "gridPos": { "x": 0, "y": 20, "w": 12, "h": 6 },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "targets": [{
+        "expr": "rate(lta_upstream_errors_total[5m]) * 60",
+        "legendFormat": "{{reason}}"
+      }]
+    },
+
+    {
+      "type": "timeseries",
+      "title": "LTA Upstream Latency",
+      "id": 10,
+      "gridPos": { "x": 12, "y": 20, "w": 12, "h": 6 },
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(lta_upstream_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "P50 upstream"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(lta_upstream_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "P95 upstream"
+        }
+      ]
+    }
+
+  ]
+}

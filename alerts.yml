@@ -1,0 +1,107 @@
+# SLO: 99.5% availability over a 30-day window
+# Error budget: 0.5% = ~3.6 hours/month
+#
+# Burn rate alerts — two windows to catch fast and slow burns:
+#   Fast burn  : >14x rate  over 1h  (burns 2% budget in 1h  → page)
+#   Slow burn  : >3x  rate  over 6h  (burns 5% budget in 6h  → ticket)
+
+groups:
+  - name: lta_proxy_slo
+    interval: 30s
+    rules:
+
+      # -----------------------------------------------------------------------
+      # Availability SLO (99.5%)
+      # -----------------------------------------------------------------------
+
+      - alert: LTAProxyFastBurn
+        expr: |
+          (
+            1 - (
+              rate(lta_proxy_requests_total{status="200"}[1h])
+              /
+              rate(lta_proxy_requests_total[1h])
+            )
+          ) > (14 * 0.005)
+        for: 2m
+        labels:
+          severity: critical
+          slo: availability
+        annotations:
+          summary: "LTA proxy burning error budget fast (>14x rate)"
+          description: >
+            Error rate over the last 1h is {{ $value | humanizePercentage }}.
+            At this rate the monthly error budget will be exhausted in ~2 hours.
+          runbook: "https://github.com/you/lta-proxy/blob/main/runbooks/fast-burn.md"
+
+      - alert: LTAProxySlowBurn
+        expr: |
+          (
+            1 - (
+              rate(lta_proxy_requests_total{status="200"}[6h])
+              /
+              rate(lta_proxy_requests_total[6h])
+            )
+          ) > (3 * 0.005)
+        for: 15m
+        labels:
+          severity: warning
+          slo: availability
+        annotations:
+          summary: "LTA proxy burning error budget steadily (>3x rate)"
+          description: >
+            Error rate over the last 6h is {{ $value | humanizePercentage }}.
+            At this rate ~5% of the monthly budget will be spent today.
+          runbook: "https://github.com/you/lta-proxy/blob/main/runbooks/slow-burn.md"
+
+      # -----------------------------------------------------------------------
+      # Latency SLO (P95 < 500ms)
+      # -----------------------------------------------------------------------
+
+      - alert: LTAProxyHighLatency
+        expr: |
+          histogram_quantile(
+            0.95,
+            rate(lta_proxy_request_duration_seconds_bucket{endpoint="arrivals"}[5m])
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          slo: latency
+        annotations:
+          summary: "P95 latency above 500ms SLO"
+          description: >
+            P95 request latency is {{ $value | humanizeDuration }} over the last 5m.
+          runbook: "https://github.com/you/lta-proxy/blob/main/runbooks/high-latency.md"
+
+      # -----------------------------------------------------------------------
+      # Data freshness SLO (cache age < 30s)
+      # -----------------------------------------------------------------------
+
+      - alert: LTAProxyStaleCacheData
+        expr: lta_bus_arrival_cache_age_seconds > 30
+        for: 1m
+        labels:
+          severity: warning
+          slo: freshness
+        annotations:
+          summary: "Bus arrival data is stale (>30s)"
+          description: >
+            Bus stop {{ $labels.bus_stop_code }} cache is
+            {{ $value | humanizeDuration }} old. LTA upstream may be down.
+          runbook: "https://github.com/you/lta-proxy/blob/main/runbooks/stale-cache.md"
+
+      # -----------------------------------------------------------------------
+      # Upstream health (informational, not SLO)
+      # -----------------------------------------------------------------------
+
+      - alert: LTAUpstreamErrors
+        expr: rate(lta_upstream_errors_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: info
+        annotations:
+          summary: "LTA DataMall upstream errors spiking"
+          description: >
+            {{ $value | humanize }} upstream errors/sec over the last 5m
+            (reason={{ $labels.reason }}).
