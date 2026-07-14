@@ -33,6 +33,14 @@ services:
       - "9093:9093"
     restart: unless-stopped
 
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - app
+    restart: unless-stopped
+
   grafana:
     image: grafana/grafana:10.4.2
     ports:
@@ -45,6 +53,12 @@ services:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
       - GF_AUTH_DISABLE_LOGIN_FORM=false
       - GF_SECURITY_ADMIN_PASSWORD=admin
+    restart: unless-stopped
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.1
+    ports:
+      - "9100:9100"
     restart: unless-stopped
 
 volumes:

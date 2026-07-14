@@ -4,6 +4,7 @@ import httpx
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import make_asgi_app
 from dotenv import load_dotenv
 
@@ -46,6 +47,13 @@ app = FastAPI(
     description="Thin proxy over LTA DataMall with Prometheus SLI instrumentation",
     version="1.0.0",
     lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_methods=["GET"],
+    allow_headers=["*"],
 )
 
 # Mount /metrics endpoint for Prometheus to scrape
@@ -160,3 +168,5 @@ async def root():
         },
         "example": "/arrivals/83139",
     }
+
+
