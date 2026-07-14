@@ -181,7 +181,7 @@ async def get_arrivals(bus_stop_code: str):
                 "bus_stop_code": bus_stop_code,
                 "status": status_code,
                 "duration_ms": duration_ms,
-                "cache": cache_result,
+                "cache": cache_result, # "hit", "miss", or "stale"
             }},
         )
 
