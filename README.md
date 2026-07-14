@@ -16,6 +16,21 @@ Client → FastAPI Proxy → LTA DataMall API
         Alertmanager (burn rate alerts)
 ```
 
+## Log pipeline
+
+```text
+app.py writes JSON logs to /app/logs/app.log
+              ↕  (shared Docker volume: app_logs)
+Logstash reads from /logs/app.log
+  → parses JSON fields
+  → tags slow requests, errors, cache misses
+  → ships to Elasticsearch
+              ↓
+Elasticsearch stores as searchable documents (index: lta-proxy-YYYY.MM.DD)
+              ↓
+Kibana — search and visualise logs at http://localhost:5601
+```
+
 ## SLOs defined
 
 | SLO | Target | SLI |
@@ -58,6 +73,7 @@ curl http://localhost:8000/metrics | grep lta_
 - Grafana: <http://localhost:3000> (admin / admin)
 - Prometheus: <http://localhost:9090>
 - Alertmanager: <http://localhost:9093>
+- Kibana: <http://localhost:5601>
 
 ## Key bus stop codes to try
 

@@ -6,6 +6,8 @@ services:
       - "8000:8000"
     env_file: .env
     restart: unless-stopped
+    volumes:
+      - app_logs:/app/logs       # log files written here, Logstash reads from same volume
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
@@ -55,12 +57,53 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     restart: unless-stopped
 
-  node-exporter:
-    image: prom/node-exporter:v1.8.1
+  # ---------------------------------------------------------------------------
+  # ELK Stack
+  # ---------------------------------------------------------------------------
+
+  elasticsearch:
+    image: elasticsearch:8.13.0
+    environment:
+      - discovery.type=single-node     # run as single node, not a cluster
+      - xpack.security.enabled=false   # no auth for local dev
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m  # limit JVM heap to 512MB
     ports:
-      - "9100:9100"
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    restart: unless-stopped
+
+  logstash:
+    image: logstash:8.13.0
+    volumes:
+      - ./logstash/pipeline/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - app_logs:/logs                 # same volume as app — reads what app writes
+    environment:
+      - LS_JAVA_OPTS=-Xms256m -Xmx256m  # limit JVM heap to 256MB
+    depends_on:
+      elasticsearch:
+        condition: service_healthy     # wait until Elasticsearch is ready
+    restart: unless-stopped
+
+  kibana:
+    image: kibana:8.13.0
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
   prometheus_data:
   grafana_data:
+  es_data:
+  app_logs:                            # shared between app and logstash
