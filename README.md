@@ -132,6 +132,70 @@ curl http://localhost:8000/metrics | grep lta_
 - Alertmanager: <http://localhost:9093>
 - Kibana: <http://localhost:5601>
 
+## Quick start (v2 EC2)
+
+### 1. Launch an EC2 instance
+
+- OS: Ubuntu 24.04
+- Instance type: t3.medium (4GB RAM, needed for ELK) or t3.micro (1GB, use prod compose)
+- Storage: 20GB gp3
+- Security group — open inbound ports: `22`, `8000`, `5173`, `3000`, `9090`, `9093`, `5601`
+
+### 2. SSH into the server
+
+```bash
+chmod 400 your-key.pem
+ssh -i your-key.pem ubuntu@<ec2-public-ip>
+```
+
+### 3. Install Docker
+
+```bash
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker ubuntu
+newgrp docker
+```
+
+### 4. Clone and configure
+
+```bash
+git clone https://github.com/sparkling-snail/lta-proxy
+cd lta-proxy
+cp .env.example .env
+nano .env   # paste your LTA_API_KEY
+```
+
+### 5. Start the stack
+
+```bash
+# Full stack with ELK (t3.medium):
+docker compose up -d --build
+
+# Without ELK (t3.micro):
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+### 6. Open dashboards
+
+Replace `<ec2-ip>` with your EC2 public IP:
+
+- React UI: `http://<ec2-ip>:5173`
+- Grafana: `http://<ec2-ip>:3000` (admin / admin)
+- Prometheus: `http://<ec2-ip>:9090`
+- Alertmanager: `http://<ec2-ip>:9093`
+- Kibana: `http://<ec2-ip>:5601`
+
+### 7. Useful server commands
+
+```bash
+docker compose logs -f app       # stream app logs
+docker compose ps                # check container status
+docker compose down              # stop everything
+docker compose up -d             # start in background
+```
+
+---
+
 ## Key bus stop codes to try
 
 | Stop code | Location |
