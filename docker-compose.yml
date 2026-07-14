@@ -52,7 +52,7 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Editor
       - GF_AUTH_DISABLE_LOGIN_FORM=false
       - GF_SECURITY_ADMIN_PASSWORD=admin
     restart: unless-stopped
@@ -102,8 +102,17 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  kibana-setup:
+    image: curlimages/curl:8.7.1
+    volumes:
+      - ./kibana/setup.sh:/setup.sh
+    entrypoint: ["sh", "/setup.sh"]
+    depends_on:
+      - kibana
+    restart: on-failure
+
 volumes:
   prometheus_data:
   grafana_data:
   es_data:
-  app_logs:                            # shared between app and logstash
+  app_logs:                            # shared between app and logstash, needed for the pipeline
