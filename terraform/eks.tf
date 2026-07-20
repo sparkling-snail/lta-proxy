@@ -8,7 +8,9 @@ resource "aws_eks_cluster" "main" {
   version  = "1.32"
 
   vpc_config {
-    subnet_ids             = aws_subnet.public[*].id
+    # Give EKS visibility of both subnet tiers so it can place the ALB in
+    # public subnets and the control-plane ENIs in private subnets.
+    subnet_ids             = concat(aws_subnet.public[*].id, aws_subnet.private[*].id)
     endpoint_public_access = true
   }
 
@@ -50,7 +52,8 @@ resource "aws_eks_access_policy_association" "admin" {
 # t3.small  = 2 vCPU, 2GB RAM — cheapest that runs K8s system pods + app.
 # SPOT      = ~60% cheaper than on-demand; AWS drains the node gracefully
 #             before reclaiming it so rolling updates still work.
-# desired=1 = single node, single public IP — that's your entry point.
+# desired=1 = single node in a private subnet — no public IP.
+#             Outbound traffic exits through the NAT Gateway.
 #
 # NOTE: if you add kube-prometheus-stack later, upgrade to t3.medium.
 # Prometheus alone needs ~500MB heap; t3.small will OOMKill it.
@@ -60,7 +63,7 @@ resource "aws_eks_node_group" "main" {
   cluster_name    = aws_eks_cluster.main.name
   node_group_name = "main"
   node_role_arn   = aws_iam_role.node_group.arn
-  subnet_ids      = aws_subnet.public[*].id
+  subnet_ids      = aws_subnet.private[*].id
 
   # Multiple types so the spot market can pick whichever is available
   instance_types = ["t3.small", "t3.medium"]
