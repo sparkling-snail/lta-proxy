@@ -3,6 +3,9 @@ __pycache__/
 *.pyc
 .DS_Store
 
+# Project context (contains infra IPs — keep local only)
+PROJECT_CONTEXT.md
+
 # Terraform
 terraform/.terraform/
 terraform/.terraform.lock.hcl
