@@ -11,7 +11,7 @@
 ![AWS](https://img.shields.io/badge/AWS-EC2-232F3E?logo=amazonaws&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-22c55e)
 
-> **[Dashboard Gallery](#dashboard-gallery)** — React UI · Grafana · Prometheus · Kibana · Alertmanager
+> **[Dashboard Gallery](#dashboard-gallery)** — React UI · Grafana · Prometheus · Kibana · Alertmanager · **[SLA](#service-level-agreement-sla)**
 
 ---
 
@@ -146,6 +146,47 @@ Alert fires in Alertmanager
     → If app is the cause: redeploy with `docker compose up -d --build app`
     → Post-incident: verify burn rate drops below threshold in Prometheus
 ```
+
+---
+
+## Service Level Agreement (SLA)
+
+*A side project taking itself far too seriously. No customers were harmed — or billed — in the making of this SLA.*
+
+> **TL;DR:** 99.5% uptime, P95 under 500ms, bus arrivals never staler than 30 seconds. Miss it, and the sole on-call engineer owes themselves an apology and a coffee.
+
+### Commitments
+
+| Commitment | Target | Measured by |
+|---|---|---|
+| Uptime | ≥ 99.5% / month | `lta_proxy_requests_total{status="200"}` ÷ total |
+| Latency | P95 < 500 ms | `lta_proxy_request_duration_seconds_bucket` |
+| Freshness | Cache age < 30s | `lta_bus_arrival_cache_age_seconds` |
+| Time to page | < 2 min after fast-burn threshold | Alertmanager → [runbooks/](runbooks/) |
+
+### Incident severity matrix
+
+| Severity | Definition | Example | Response |
+|---|---|---|---|
+| **SEV-1** | Total outage | Nobody in Singapore can check if the 155 is coming | Page fires, `LTAProxyFastBurn`, drop everything |
+| **SEV-2** | Degraded | Stale cache serving, or P95 creeping past 500ms | `LTAProxySlowBurn` / `LTAProxyHighLatency`, investigate within the hour |
+| **SEV-3** | Cosmetic | A Grafana panel is misaligned | Ticket filed, fixed whenever motivation strikes |
+
+### Exclusions
+
+This SLA does not cover, and offers no remedy for:
+
+- LTA DataMall itself being unavailable — the proxy serves stale cache and degrades gracefully, by design
+- Singapore's bus network rerouting mid-thunderstorm
+- Incidents occurring while the entire on-call rotation (one person) is asleep, at work, or touching grass
+
+### Service credits
+
+In keeping with the spirit of every enterprise SLA ever written: a monthly uptime breach entitles affected users to **one (1) sincerely written apology**, delivered via commit message in the fix PR. Refunds are not available, as no money has changed hands at any point in this system's history.
+
+### Postmortem policy
+
+Every SEV-1/SEV-2 gets a blameless writeup: timeline, root cause, contributing factors, and action items — the same format used for real incidents, because the muscle memory is the point of the exercise. See [Incident response workflow](#incident-response-workflow) above for the live triage path.
 
 ---
 
