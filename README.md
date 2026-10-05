@@ -1,6 +1,6 @@
-# LTA Bus Arrival Proxy
+# 🚌 LTA Bus Arrival Proxy
 
-> Production-instrumented HTTP proxy over the Singapore LTA DataMall Bus Arrival API — demonstrating SLI/SLO engineering, multi-window burn-rate alerting, structured logging, and full-stack observability with Prometheus, Grafana, and the ELK stack.
+> A "is my bus coming" checker that spiraled into SLOs, burn-rate alerts, an ELK stack, and a Service Level Agreement it takes unreasonably seriously. Production-instrumented HTTP proxy over the Singapore LTA DataMall Bus Arrival API — built to practice being on-call for something, even if that something is 15 bus stops in Sengkang.
 
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.110-009688?logo=fastapi&logoColor=white)
@@ -13,9 +13,13 @@
 
 > **[Dashboard Gallery](#dashboard-gallery)** — React UI · Grafana · Prometheus · Kibana · Alertmanager · **[SLA](#service-level-agreement-sla)**
 
+**Why this exists:** I wanted to build something fun with a public API, so I picked Singapore's bus arrival data and then pointed my actual day-job skillset at it — SLIs, SLOs, burn-rate alerts, structured logging, the whole toolkit a real production service gets, applied to whether the 155 is five minutes away. Same muscles, lower stakes.
+
 ---
 
 ## Key Features
+
+*Things a `curl` script in a cron job would not bother doing:*
 
 | Category | Capability |
 |---|---|
@@ -29,6 +33,8 @@
 ---
 
 ## Architecture
+
+*The full topology, serving an estimated one (1) real daily active user.*
 
 ```mermaid
 graph TB
@@ -90,6 +96,8 @@ The app emits structured JSON to both stdout and `/app/logs/app.log` (in a share
 
 ## Production Engineering Practices
 
+*"It works on my machine" is not a Service Level Objective. Here's what is.*
+
 ### SLIs
 
 Three Service Level Indicators are instrumented directly in [metrics.py](metrics.py):
@@ -110,7 +118,7 @@ Three Service Level Indicators are instrumented directly in [metrics.py](metrics
 
 ### Burn-rate alerting
 
-Multi-window alerting ([alerts.yml](alerts.yml)) catches both sudden spikes and slow degradation:
+Multi-window alerting ([alerts.yml](alerts.yml)) catches both sudden spikes and slow degradation — because a single threshold either pages you for a blip or stays silent through a slow bleed, and neither of those makes for a good night's sleep:
 
 | Alert | Window | Multiplier | Severity | Meaning |
 |---|---|---|---|---|
@@ -126,7 +134,7 @@ Docker Compose polls `GET /health` every 10 seconds. Logstash and Kibana depend 
 
 ### Runbooks
 
-Every alert links to a runbook. Runbooks follow a consistent structure: symptom, impact, diagnosis steps, mitigation, and escalation path.
+Every alert links to a runbook, because "page the engineer and let them figure it out" is not a strategy, it's a hazing ritual. Runbooks follow a consistent structure: symptom, impact, diagnosis steps, mitigation, and escalation path.
 
 | Runbook | Trigger |
 |---|---|
@@ -192,6 +200,8 @@ Every SEV-1/SEV-2 gets a blameless writeup: timeline, root cause, contributing f
 
 ## Observability Stack
 
+*Everything queryable at 3am when the bus times start feeling suspicious.*
+
 ### Prometheus metrics
 
 | Metric | Type | Labels | Description |
@@ -251,9 +261,11 @@ Pre-provisioned via `grafana/provisioning/` — no manual setup required:
 
 ## Deployment
 
+*Three ways to run this, in increasing order of "it is 2am and I regret everything."*
+
 ### v1 — Local Docker Compose
 
-Full 8-container stack on a single machine. Suitable for development and learning.
+Full 8-container stack on a single machine. Suitable for development, learning, and proving to yourself it still works before you touch anything else.
 
 ```bash
 git clone https://github.com/sparkling-snail/lta-proxy
@@ -309,19 +321,23 @@ docker stats                        # live resource usage
 
 </details>
 
-### v3 — AWS EKS (planned)
+### v3 — AWS EKS
+
+Fully scripted, from empty AWS account to a running cluster. See [k8s/DEPLOY.md](k8s/DEPLOY.md) for the exact apply sequence.
 
 | Component | Tool |
 |---|---|
-| Infrastructure | Terraform — VPC, EKS cluster, managed node group, IAM roles |
+| Infrastructure | Terraform — VPC, EKS cluster, managed node group, IAM roles, IRSA, GitHub OIDC |
 | Application | Kubernetes Deployment + Service + HPA + ConfigMap + Secret |
 | Ingress | AWS Load Balancer Controller |
 | Observability | `kube-prometheus-stack` via Helm (Prometheus Operator, Grafana, Alertmanager) |
-| CI/CD | GitHub Actions — build → ECR push → `kubectl rollout restart` |
+| CI/CD | GitHub Actions — OIDC auth → build → ECR push → `kubectl set image` → rollout status |
 
 ---
 
 ## Project Structure
+
+*Where everything lives, for when future-me inevitably forgets.*
 
 ```
 lta-proxy/
@@ -378,6 +394,8 @@ lta-proxy/
 
 ## Runbooks
 
+*So the person paged at 3am doesn't have to reverse-engineer the system from first principles.*
+
 Each alert in [alerts.yml](alerts.yml) carries a `runbook` annotation linking directly to the relevant file. Runbooks follow a four-step structure:
 
 1. **Symptom** — what the alert means in plain English
@@ -389,27 +407,9 @@ The stale-cache runbook is the most illustrative: when LTA DataMall is degraded,
 
 ---
 
-## Roadmap
-
-- [x] FastAPI proxy with in-memory cache and stale fallback
-- [x] Prometheus SLI instrumentation (8 metrics)
-- [x] SLO definitions and multi-window burn-rate alerting
-- [x] Grafana dashboards (pre-provisioned)
-- [x] Structured JSON logging (stdout + file)
-- [x] ELK stack: Logstash pipeline, Elasticsearch, Kibana auto data view
-- [x] React frontend with load-factor colours and stale banner
-- [x] Docker Compose multi-service orchestration (8 containers)
-- [x] AWS EC2 deployment (full stack + prod compose without ELK)
-- [ ] Push images to AWS ECR
-- [ ] Terraform: VPC + EKS cluster + managed node group + IAM
-- [ ] Kubernetes manifests: Deployment, Service, HPA, ConfigMap, Secret
-- [ ] AWS Load Balancer Controller for public ingress
-- [ ] `kube-prometheus-stack` via Helm
-- [ ] GitHub Actions CI/CD: build → ECR → rollout restart
-
----
-
 ## Technologies Used
+
+*The stack, for anyone doing résumé keyword bingo:*
 
 | Category | Technology | Version |
 |---|---|---|
@@ -431,6 +431,8 @@ The stale-cache runbook is the most illustrative: when LTA DataMall is degraded,
 ---
 
 ## Local Development
+
+*Five minutes from clone to knowing exactly when bus 155 shows up.*
 
 **Prerequisites:** Docker Desktop, [LTA DataMall API key](https://datamall.lta.gov.sg/content/datamall/en/request-for-api.html) (free)
 
@@ -460,6 +462,8 @@ curl http://localhost:8000/metrics | grep lta_ # Prometheus metrics
 ---
 
 ## Lessons Learned
+
+*What this bus-timing side project taught me that no tutorial did.*
 
 ### SLI design is harder than instrumentation
 
