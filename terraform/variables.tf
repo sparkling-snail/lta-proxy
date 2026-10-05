@@ -10,3 +10,8 @@ variable "admin_iam_arn" {
   description = "Your IAM user/role ARN. Get it with: aws sts get-caller-identity --query Arn --output text"
   type        = string
 }
+
+variable "github_repo" {
+  description = "GitHub repo allowed to assume the CI/CD role, as owner/repo"
+  default     = "sparkling-snail/lta-proxy"
+}

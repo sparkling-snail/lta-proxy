@@ -18,3 +18,14 @@ output "frontend_ecr_url" {
 output "kubeconfig_command" {
   value = "aws eks update-kubeconfig --name ${var.cluster_name} --region ${var.region}"
 }
+
+# Paste this into the GitHub repo secret AWS_DEPLOY_ROLE_ARN
+output "github_actions_role_arn" {
+  value = aws_iam_role.github_actions.arn
+}
+
+# Paste this into the AWS Load Balancer Controller's ServiceAccount annotation
+# (eks.amazonaws.com/role-arn) before installing the controller via Helm
+output "lbc_role_arn" {
+  value = aws_iam_role.lbc.arn
+}
