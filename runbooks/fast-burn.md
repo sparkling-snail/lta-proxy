@@ -3,7 +3,7 @@
 **Alert:** `LTAProxyFastBurn`
 **Severity:** Critical
 **SLO:** Availability ≥ 99.5%
-**Meaning:** The proxy is burning its monthly error budget at >14x the normal rate. At this pace the entire monthly budget is exhausted in ~2 hours.
+**Meaning:** The proxy is burning its monthly error budget at >14x the normal rate. At this pace the entire monthly budget is exhausted in ~2 days, about 2% every hour.
 
 ---
 

@@ -122,8 +122,8 @@ Multi-window alerting ([alerts.yml](alerts.yml)) catches both sudden spikes and 
 
 | Alert | Window | Multiplier | Severity | Meaning |
 |---|---|---|---|---|
-| `LTAProxyFastBurn` | 1h | 14× | critical | Budget exhausted in ~2h at current rate |
-| `LTAProxySlowBurn` | 6h | 3× | warning | ~5% of monthly budget consumed today |
+| `LTAProxyFastBurn` | 1h | 14× | critical | Budget exhausted in ~2 days at current rate |
+| `LTAProxySlowBurn` | 6h | 3× | warning | ~10% of monthly budget consumed per day |
 | `LTAProxyHighLatency` | 5m | — | warning | P95 exceeds 500ms SLO |
 | `LTAProxyStaleCacheData` | 1m | — | warning | Cache age > 30s; upstream likely degraded |
 | `LTAUpstreamErrors` | 5m | — | info | LTA DataMall error rate > 0.1 req/s |
@@ -471,7 +471,7 @@ Choosing _what_ to measure is the real work. `lta_bus_arrival_cache_age_seconds`
 
 ### Multi-window burn-rate alerting over simple thresholds
 
-A fixed error-rate threshold fires constantly on minor blips and misses slow degradation. The Google SRE Book's multi-window approach (fast burn = page immediately, slow burn = create a ticket) gives appropriate urgency without alert fatigue. The 14× multiplier means a critical alert fires only when the monthly error budget will be exhausted within ~2 hours.
+A fixed error-rate threshold fires constantly on minor blips and misses slow degradation. The Google SRE Book's multi-window approach (fast burn = page immediately, slow burn = create a ticket) gives appropriate urgency without alert fatigue. The 14× multiplier means a critical alert fires only when the monthly error budget would be gone in about 2 days (720 h ÷ 14 ≈ 51 h), burning roughly 2% of it every hour.
 
 ### Stale-cache fallback as a reliability primitive
 

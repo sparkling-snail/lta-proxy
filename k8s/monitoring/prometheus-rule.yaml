@@ -31,7 +31,7 @@ spec:
             summary: "LTA proxy burning error budget fast (>14x rate)"
             description: >
               Error rate over the last 1h is {{ $value | humanizePercentage }}.
-              Monthly error budget will be exhausted in ~2 hours.
+              Monthly error budget will be exhausted in ~2 days.
 
         - alert: LTAProxySlowBurn
           expr: |

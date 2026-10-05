@@ -3,7 +3,7 @@
 **Alert:** `LTAProxyHighLatency`
 **Severity:** Warning
 **SLO:** P95 latency < 500ms
-**Meaning:** 95% of requests are taking longer than 500ms over the last 5 minutes.
+**Meaning:** P95 latency is above 500ms over the last 5 minutes, so at least 5% of requests are taking longer than that.
 
 ---
 

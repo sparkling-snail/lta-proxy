@@ -3,7 +3,7 @@
 #
 # Burn rate alerts — two windows to catch fast and slow burns:
 #   Fast burn  : >14x rate  over 1h  (burns 2% budget in 1h  → page)
-#   Slow burn  : >3x  rate  over 6h  (burns 5% budget in 6h  → ticket)
+#   Slow burn  : >3x  rate  over 6h  (burns 2.5% budget in 6h → ticket)
 
 groups:
   - name: lta_proxy_slo
@@ -31,8 +31,8 @@ groups:
           summary: "LTA proxy burning error budget fast (>14x rate)"
           description: >
             Error rate over the last 1h is {{ $value | humanizePercentage }}.
-            At this rate the monthly error budget will be exhausted in ~2 hours.
-          runbook: "https://github.com/you/lta-proxy/blob/main/runbooks/fast-burn.md"
+            At this rate the monthly error budget will be exhausted in ~2 days.
+          runbook: "https://github.com/sparkling-snail/lta-proxy/blob/main/runbooks/fast-burn.md"
 
       - alert: LTAProxySlowBurn
         expr: |
@@ -51,8 +51,8 @@ groups:
           summary: "LTA proxy burning error budget steadily (>3x rate)"
           description: >
             Error rate over the last 6h is {{ $value | humanizePercentage }}.
-            At this rate ~5% of the monthly budget will be spent today.
-          runbook: "https://github.com/you/lta-proxy/blob/main/runbooks/slow-burn.md"
+            At this rate ~10% of the monthly budget will be spent today.
+          runbook: "https://github.com/sparkling-snail/lta-proxy/blob/main/runbooks/slow-burn.md"
 
       # -----------------------------------------------------------------------
       # Latency SLO (P95 < 500ms)
@@ -72,7 +72,7 @@ groups:
           summary: "P95 latency above 500ms SLO"
           description: >
             P95 request latency is {{ $value | humanizeDuration }} over the last 5m.
-          runbook: "https://github.com/you/lta-proxy/blob/main/runbooks/high-latency.md"
+          runbook: "https://github.com/sparkling-snail/lta-proxy/blob/main/runbooks/high-latency.md"
 
       # -----------------------------------------------------------------------
       # Data freshness SLO (cache age < 30s)
@@ -89,7 +89,7 @@ groups:
           description: >
             Bus stop {{ $labels.bus_stop_code }} cache is
             {{ $value | humanizeDuration }} old. LTA upstream may be down.
-          runbook: "https://github.com/you/lta-proxy/blob/main/runbooks/stale-cache.md"
+          runbook: "https://github.com/sparkling-snail/lta-proxy/blob/main/runbooks/stale-cache.md"
 
       # -----------------------------------------------------------------------
       # Upstream health (informational, not SLO)

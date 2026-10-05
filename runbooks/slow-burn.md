@@ -3,7 +3,7 @@
 **Alert:** `LTAProxySlowBurn`
 **Severity:** Warning
 **SLO:** Availability ≥ 99.5%
-**Meaning:** The proxy is burning error budget at >3x the normal rate over 6 hours. Not an emergency, but if left unaddressed ~5% of the monthly budget will be spent today.
+**Meaning:** The proxy is burning error budget at >3x the normal rate over 6 hours. Not an emergency, but if left unaddressed ~10% of the monthly budget will be spent today.
 
 ---
 
