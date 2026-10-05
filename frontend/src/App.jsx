@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import BusStop from './components/BusStop'
 
-const API_BASE = 'http://localhost:8000'
+// Empty string = relative path → works in K8s via Ingress path routing
+// For local dev create frontend/.env.local with: VITE_API_URL=http://localhost:8000
+const API_BASE = import.meta.env.VITE_API_URL ?? ''
 
 const POPULAR_STOPS = [
   { code: '83139', name: 'Sengkang Int' },

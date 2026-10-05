@@ -1,0 +1,70 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main, test_local]
+
+env:
+  AWS_REGION: ap-southeast-1
+  CLUSTER_NAME: lta-proxy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # required for OIDC — no long-lived AWS keys stored in GitHub
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # OIDC: GitHub exchanges a short-lived token with AWS — no static credentials needed.
+      # Requires the GitHub OIDC provider and an IAM role to be set up in your AWS account.
+      # See: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc.html
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push app image
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/lta-proxy:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/lta-proxy:$IMAGE_TAG
+
+      - name: Build and push frontend image
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/lta-proxy-frontend:$IMAGE_TAG ./frontend
+          docker push $ECR_REGISTRY/lta-proxy-frontend:$IMAGE_TAG
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
+
+      - name: Deploy to EKS
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          kubectl set image deployment/lta-proxy \
+            app=$ECR_REGISTRY/lta-proxy:$IMAGE_TAG \
+            -n lta-proxy
+
+          kubectl set image deployment/lta-proxy-frontend \
+            frontend=$ECR_REGISTRY/lta-proxy-frontend:$IMAGE_TAG \
+            -n lta-proxy
+
+          # Block until the rollout is healthy or roll back automatically
+          kubectl rollout status deployment/lta-proxy -n lta-proxy --timeout=120s
+          kubectl rollout status deployment/lta-proxy-frontend -n lta-proxy --timeout=60s

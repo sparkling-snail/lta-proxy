@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: lta-proxy
+  namespace: lta-proxy
+  labels:
+    app: lta-proxy
+spec:
+  selector:
+    app: lta-proxy
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000

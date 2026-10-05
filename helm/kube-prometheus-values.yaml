@@ -1,0 +1,47 @@
+# Helm values for kube-prometheus-stack.
+#
+# Install with:
+#   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+#   helm repo update
+#   helm install kube-prom prometheus-community/kube-prometheus-stack \
+#     --namespace monitoring --create-namespace \
+#     --values helm/kube-prometheus-values.yaml
+
+grafana:
+  adminPassword: "changeme"  # change before deploying
+  persistence:
+    enabled: true
+    size: 1Gi
+
+prometheus:
+  prometheusSpec:
+    retention: 7d
+    # Watch ServiceMonitor and PrometheusRule objects in all namespaces
+    serviceMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    serviceMonitorSelector: {}
+    ruleSelector: {}
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi
+
+alertmanager:
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 1Gi
+
+# Scrape kube-state-metrics and node-exporter for cluster-level dashboards
+kubeStateMetrics:
+  enabled: true
+
+nodeExporter:
+  enabled: true

@@ -6,6 +6,12 @@ __pycache__/
 # Project context (contains infra IPs — keep local only)
 PROJECT_CONTEXT.md
 
+# Kubernetes secret (never commit — contains LTA_API_KEY)
+k8s/app/secret.yaml
+
+# Frontend local env
+frontend/.env.local
+
 # Terraform
 terraform/.terraform/
 terraform/.terraform.lock.hcl

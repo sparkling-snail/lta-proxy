@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lta-proxy-frontend
+  namespace: lta-proxy
+  labels:
+    app: lta-proxy-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lta-proxy-frontend
+  template:
+    metadata:
+      labels:
+        app: lta-proxy-frontend
+    spec:
+      containers:
+        - name: frontend
+          # CI/CD replaces this with the SHA-tagged ECR image.
+          # Get the registry URL from: terraform output frontend_ecr_url
+          image: REPLACE_WITH_ECR_FRONTEND_URL:latest
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10

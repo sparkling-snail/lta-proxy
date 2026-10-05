@@ -1,0 +1,17 @@
+# Tells the Prometheus Operator (from kube-prometheus-stack) to scrape the app.
+# Without this, Prometheus wouldn't know the app exists.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: lta-proxy
+  namespace: lta-proxy
+  labels:
+    release: kube-prom  # must match kube-prometheus-stack's serviceMonitorSelector
+spec:
+  selector:
+    matchLabels:
+      app: lta-proxy
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 10s

@@ -1,0 +1,82 @@
+# Wraps alerts.yml as a Kubernetes CRD so the Prometheus Operator picks it up.
+# The Operator watches for PrometheusRule objects and auto-loads them — no
+# hand-editing prometheus.yml required.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: lta-proxy-slo
+  namespace: lta-proxy
+  labels:
+    release: kube-prom  # must match kube-prometheus-stack's ruleSelector
+spec:
+  groups:
+    - name: lta_proxy_slo
+      interval: 30s
+      rules:
+
+        - alert: LTAProxyFastBurn
+          expr: |
+            (
+              1 - (
+                rate(lta_proxy_requests_total{status="200"}[1h])
+                /
+                rate(lta_proxy_requests_total[1h])
+              )
+            ) > (14 * 0.005)
+          for: 2m
+          labels:
+            severity: critical
+            slo: availability
+          annotations:
+            summary: "LTA proxy burning error budget fast (>14x rate)"
+            description: >
+              Error rate over the last 1h is {{ $value | humanizePercentage }}.
+              Monthly error budget will be exhausted in ~2 hours.
+
+        - alert: LTAProxySlowBurn
+          expr: |
+            (
+              1 - (
+                rate(lta_proxy_requests_total{status="200"}[6h])
+                /
+                rate(lta_proxy_requests_total[6h])
+              )
+            ) > (3 * 0.005)
+          for: 15m
+          labels:
+            severity: warning
+            slo: availability
+          annotations:
+            summary: "LTA proxy burning error budget steadily (>3x rate)"
+            description: >
+              Error rate over the last 6h is {{ $value | humanizePercentage }}.
+
+        - alert: LTAProxyHighLatency
+          expr: |
+            histogram_quantile(
+              0.95,
+              rate(lta_proxy_request_duration_seconds_bucket{endpoint="arrivals"}[5m])
+            ) > 0.5
+          for: 5m
+          labels:
+            severity: warning
+            slo: latency
+          annotations:
+            summary: "P95 latency above 500ms SLO"
+
+        - alert: LTAProxyStaleCacheData
+          expr: lta_bus_arrival_cache_age_seconds > 30
+          for: 1m
+          labels:
+            severity: warning
+            slo: freshness
+          annotations:
+            summary: "Bus arrival data is stale (>30s)"
+
+        - alert: LTAUpstreamErrors
+          expr: rate(lta_upstream_errors_total[5m]) > 0.1
+          for: 2m
+          labels:
+            severity: info
+          annotations:
+            summary: "LTA DataMall upstream errors spiking"
