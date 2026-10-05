@@ -364,6 +364,10 @@ lta-proxy/
 
 ## Dashboard Gallery
 
+![React UI — live bus arrivals](docs/screenshots/react-ui.png)
+
+![Grafana SLO dashboard — live metrics](docs/screenshots/grafana-slo-dashboard.png)
+
 ![Grafana SLO dashboard](https://github.com/user-attachments/assets/3f5e4c9e-c134-451a-b0cc-df6c3d814c97)
 
 ![Prometheus targets](https://github.com/user-attachments/assets/38544938-43b1-4440-982a-b2419d3df653)
